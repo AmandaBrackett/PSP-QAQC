@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+This document goes through the process of reformatting the PSP data outputs from MAPP into the final format to be uploaded to the Forest Service Data Bank (FSDB). This is the first step in the QAQC process for PSP data and the output from this document will be used in subsequent steps.
+
+```{r, setup1, include=TRUE}
+
+#something using Here function
+```
+
+```{r setup2, message = FALSE, warning = FALSE}
+list.of.packages <- c("tidyverse","ggpubr","knitr","kableExtra", "here", "stringr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+library(tidyverse)
+library(ggpubr)
+library(knitr)
+library(here)
+library(stringr)
+```
+
+## Data sources
+
+There are three data inputs:
+
+meas_link_unformatted_YYYY: unformatted remeasurement data from MAPP
+
+mort_link_unformatted_YYYY: unformatted mortality data from MAPP
+
+stand_link_unformatted_YYYY: unformatted stand level data from MAPP
+
+```{r data inputs, message=FALSE, warning=FALSE, include=FALSE}
+
+mapp_remeas_raw <- read.csv(here("dataentry/2021/default2021/meas_link_unformatted_2021.csv"))
+
+mapp_mort_raw <- read.csv(here("dataentry/2021/default2021/mort_link_unformatted_2021.csv"))
+
+mapp_stand_raw <- read.csv(here("dataentry/2021/default2021/stand_link_unformatted_2021.csv"))
+```
+
+## Remeasurement reformatting
+
+These next sections of code reformat the remeasurement data (tree data) into the FSDB format required for subsequent QAQC steps.
+
+First unnecessary columns are moved
+
+```{r tree rm columns, message=FALSE, warning=FALSE, include=FALSE}
+
+c_delete <- c("X_id", "X_form_id", "X_locale", "X_savepoint_type","X_savepoint_creator", "X_deleted", "X_data_etag_at_modification", "X_default_access", "X_group_modify", "X_group_privileged", "X_group_read_only", "X_row_etag", "X_row_owner")
+
+
+mapp_remeas <- mapp_remeas_raw %>%
+  select(-tc_delete)
+```
+
+The timestamp column is reformatted into a mm/dd/yyyy format
+
+```{r tree timestamp, message=FALSE, warning=FALSE, include=FALSE}
+
+mapp_remeas$X_savepoint_timestamp <- mapp_remeas$X_savepoint_timestamp %>%
+  str_sub(1, 10) %>%
+  as.Date("%Y-%m-%d")%>%
+  format("%m/%d/%Y")
+
+```
+
+Then columns are renamed to match intended output
+
+```{r tree rename columns,message=FALSE, warning=FALSE, include=FALSE}
+
+mapp_remeas <- mapp_remeas %>%
+  rename( "TimeStamp" = "X_savepoint_timestamp",
+         "Canopy_class" = "canopy_class",
+         "Crown_pct"= "crown_percentage",
+         "Dbh" = "dbh", 
+         "Lean_angle" = "lean_angle",
+         "Main_stem" = "main_stem",
+         "Tree_vigor" = "overall_vigor",
+         "Plot"= "plot",
+         "Rooting"= "rooting",
+         "Species" = "species",
+         "StandID" = "stand",
+         "Tree_status" = "status",
+         "Tag" = "tag",
+         "Tree_pct" = "tree_percentage"
+  )
+  
+```
+
+Then we deal with the comments. First we pull out the char and scorch comments. Then check for common misspellings of comments and change any abbreviations. All comments need to be concatenated into a column called Field_notes and seperated by a ;. This also includes the azimuth, distance, and from information for ingrowth.
+
+```{r tree comments, message=FALSE, warning=FALS, include=FALSE}
+
+```
+
+Finally, we reorder the columns.
+
+```{r tree reorder columns, message=FALSE, warning=FALSE, include=FALSE}
+
+```
+
+double check formatting and write new file
+
+```{r}
+
+```
+
+## Mortality Data
+
+```{r}
+mapp_mort <- mapp_mort_raw %>%
+  select(-c_delete)
+
+
+mapp_mort$X_savepoint_timestamp <- mapp_mort$X_savepoint_timestamp %>%
+  str_sub(1, 4) %>%
+
+
+mapp_mort <- mapp_mort %>%
+  rename( "Year" = "X_savepoint_timestamp",
+         "Crown_pct"= "crown_percentage",
+         "Lean_angle" = "lean_angle",
+         "MS" = "main_stem",
+         "Plot"= "plot",
+         "Mort_cause1" = ""
+         "Rooting"= "rooting",
+         "Species" = "species",
+         "StandID" = "stand",
+         "Tree_status" = "status",
+         "Tag" = "tag",
+         "Tree_pct" = "tree_percentage"
+  )
+
+```
+
+## Stand Data
